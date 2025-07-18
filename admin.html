@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel | God Anime Verse</title>
+    <style>
+        body {
+            background: #121212;
+            color: #fff;
+            font-family: sans-serif;
+            padding: 1rem;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        .section {
+            margin: 2rem 0;
+        }
+
+        input,
+        button,
+        select,
+        textarea {
+            padding: 0.5rem;
+            margin: 0.3rem 0;
+            width: 100%;
+            border: none;
+            border-radius: 5px;
+        }
+
+        button {
+            background: #f97316;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .anime-list,
+        .user-list {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        }
+
+        .card {
+            background: #1e1e1e;
+            padding: 1rem;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Admin Panel</h2>
+
+    <div class="section">
+        <h3>➕ Add New Anime</h3>
+        <input id="title" placeholder="Title">
+        <input id="img" placeholder="Image URL">
+        <input id="video" placeholder="Video Embed URL">
+        <input id="genre" placeholder="Genres (comma-separated)">
+        <input id="tags" placeholder="Tags (comma-separated)">
+        <button onclick="addAnime()">Add Anime</button>
+        
+    </div>
+   
+       
+        
+    
+   
+
+    <div class="section">
+        <h3>📋 Anime List</h3>
+        <div class="anime-list" id="animeList"></div>
+        <button onclick="exportAnime()">⬇️ Export Anime JSON</button>
+        <textarea id="importArea" placeholder="Paste JSON to import..."></textarea>
+        <button onclick="importAnime()">⬆️ Import Anime</button>
+        
+        <div class="section">
+            <h3>📦 Import/Export</h3>
+            <input type="file" onchange="importAnime(event)" />
+            <button onclick="exportAnime()">Export Anime</button>
+            </div>
+    </div>
+
+    <div class="section">
+        <h3>👥 User Management</h3>
+        <div class="user-list" id="userList"></div>
+    </div>
+
+    <div class="section">
+        <h3>🔐 Reset Admin Password</h3>
+        <input id="resetCode" placeholder="Secret Code">
+        <input id="newPass" placeholder="New Password">
+        <button onclick="resetAdminPass()">Reset</button>
+    </div>
+
+    <script>
+        const ANIME_KEY = "animeList";
+        const USER_KEY = "animeUsers";
+
+        function getAnimeList() {
+            return JSON.parse(localStorage.getItem(ANIME_KEY) || "[]");
+        }
+        function setAnimeList(list) {
+            localStorage.setItem(ANIME_KEY, JSON.stringify(list));
+        }
+
+        function getUsers() {
+            return JSON.parse(localStorage.getItem(USER_KEY) || "[]");
+        }
+        function setUsers(users) {
+            localStorage.setItem(USER_KEY, JSON.stringify(users));
+        }
+
+        function addAnime() {
+            const a = {
+                title: title.value,
+                img: img.value,
+                video: video.value,
+                genre: genre.value,
+                tags: tags.value.split(",").map(t => t.trim())
+            };
+            const list = getAnimeList();
+            list.push(a);
+            setAnimeList(list);
+            renderAnime();
+        }
+
+        function deleteAnime(i) {
+            const list = getAnimeList();
+            list.splice(i, 1);
+            setAnimeList(list);
+            renderAnime();
+        }
+
+        function renderAnime() {
+            const list = getAnimeList();
+            animeList.innerHTML = list.map((a, i) => `
+        <div class='card'>
+          <img src="${a.img}" style="width:100%; border-radius:5px;">
+          <h4>${a.title}</h4>
+          <p><b>Genres:</b> ${a.genre}</p>
+          <p><b>Tags:</b> ${a.tags.join(", ")}</p>
+          <button onclick="deleteAnime(${i})">🗑 Delete</button>
+        </div>
+      `).join("");
+        }
+
+        function renderUsers() {
+            const users = getUsers();
+            userList.innerHTML = users.map((u, i) => `
+        <div class='card'>
+          <h4>${u.username}</h4>
+          <p>Status: ${u.approved ? "✅ Approved" : "⏳ Pending"}</p>
+          <button onclick="approveUser(${i})">✔ Approve</button>
+          <button onclick="blockUser(${i})">⛔ Block</button>
+          <button onclick="deleteUser(${i})">🗑 Delete</button>
+        </div>
+      `).join("");
+        }
+
+        function approveUser(i) {
+            const users = getUsers();
+            users[i].approved = true;
+            setUsers(users);
+            renderUsers();
+        }
+
+        function blockUser(i) {
+            const users = getUsers();
+            users[i].approved = false;
+            setUsers(users);
+            renderUsers();
+        }
+
+        function deleteUser(i) {
+            const users = getUsers();
+            users.splice(i, 1);
+            setUsers(users);
+            renderUsers();
+        }
+
+        function exportAnime() {
+            const json = JSON.stringify(getAnimeList(), null, 2);
+            navigator.clipboard.writeText(json);
+            alert("Anime list copied to clipboard!");
+        }
+
+        function importAnime() {
+            try {
+                const data = JSON.parse(importArea.value);
+                setAnimeList(data);
+                renderAnime();
+                alert("Anime list imported.");
+            } catch {
+                alert("Invalid JSON");
+            }
+        }
+
+        function resetAdminPass() {
+            const code = document.getElementById("resetCode").value.trim();
+            const newPass = document.getElementById("newPass").value.trim();
+            if (code !== "7903312393") return alert("Invalid code.");
+            const users = getUsers();
+            const admin = users.find(u => u.username === "admin");
+            if (admin) {
+                admin.password = newPass;
+            } else {
+                users.push({ username: "admin", password: newPass, approved: true });
+            }
+            setUsers(users);
+            alert("Admin password updated.");
+        }
+
+        renderAnime();
+        renderUsers();
+         /* ---------- AUTO AD BLOCKER ---------- */
+            function autoAdBlocker() {
+                const adSelectors = ["iframe", ".ad", ".ads", "[id*='ad']", "[class*='ad']"];
+                setInterval(() => {
+                    adSelectors.forEach(sel => {
+                        document.querySelectorAll(sel).forEach(el => el.remove());
+                    });
+                }, 1000);
+            }
+
+
+
+
+
+    </script>
+    <a href="index.html" id="homeBtn">Home</a>
+</body>
+
+</html>

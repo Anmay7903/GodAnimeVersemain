@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login | God Anime Verse</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: url('https://i.pinimg.com/1200x/70/41/e9/7041e95d55782f2d9c62b97f0f95e6cf.jpg') no-repeat center center fixed;
+      background-size: cover;
+      height: 100vh;
+      color: white;
+    }
+
+    nav {
+      position: absolute;
+      width: 100%;
+      top: 20px;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 40px;
+      z-index: 10;
+    }
+
+    nav .left,
+    nav .right {
+      display: flex;
+      gap: 30px;
+      
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      transition: 0.3s;
+     
+    }
+
+    nav a:hover {
+      color: #820986;
+    }
+
+    .login-box {
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 12px;
+      padding: 40px 30px;
+      width: 350px;
+      margin: 120px auto;
+      text-align: center;
+      backdrop-filter: blur(3px);
+    }
+
+    .login-box h2 {
+      margin-bottom: 20px;
+      font-size: 22px;
+    }
+
+    .login-box input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 14px;
+    }
+
+    .login-box input::placeholder {
+      color: #ccc;
+    }
+
+    .login-box button {
+      width: 100%;
+      padding: 12px;
+      background: url(https://cdn.wallpapersafari.com/51/23/nvkh7l.jpg);
+      background-size: cover;
+      background-position: center;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .login-box button:hover {
+      background-image: url(https://getwallpapers.com/wallpaper/full/7/a/e/412588.jpg);
+    }
+
+    .social-buttons button {
+      background: transparent;
+      color: rgb(252, 247, 247);
+      border: 1px solid white;
+      margin: 5px 0;
+    }
+
+    .social-buttons button:hover {
+      background-image: url(https://getwallpapers.com/wallpaper/full/7/a/e/412588.jpg);
+      background-size: cover;
+      background-position: center;
+      color: white;
+    }
+
+    hr {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      margin: 20px 0;
+    }
+
+    .forgot {
+      font-size: 12px;
+      text-align: right;
+      color: #ccc;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav>
+    <div class="left">
+      <a href="index.html">Home</a>
+      
+    
+  <!-- Login/Register/Admin Box -->
+  <div class="login-box">
+    <h2>Login / Register</h2>
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="login()">Login</button>
+    <button onclick="register()">Register</button>
+
+    <hr />
+
+    <h4>Admin Password Reset</h4>
+    <input type="text" id="resetCode" placeholder="Secret Code (admin only)" />
+    <input type="password" id="newPass" placeholder="New Admin Password" />
+    <button onclick="resetAdminPass()">Reset Admin Password</button>
+  </div>
+
+  <script>
+    const USER_KEY = "animeUsers";
+
+    function getUsers() {
+      return JSON.parse(localStorage.getItem(USER_KEY) || "[]");
+    }
+
+    function saveUsers(users) {
+      localStorage.setItem(USER_KEY, JSON.stringify(users));
+    }
+
+    function login() {
+      const u = document.getElementById("username").value.trim();
+      const p = document.getElementById("password").value;
+      const users = getUsers();
+      const user = users.find(user => user.username === u);
+
+      if (!user) return alert("User not found.");
+      if (user.password !== p) return alert("Incorrect password.");
+      if (!user.approved) return alert("Your account is pending admin approval.");
+
+      localStorage.setItem("animeUser", u);
+      localStorage.setItem("animePass", p);
+
+      if (u === "anmay9661") {
+        location.href = "admin.html";
+      } else {
+        location.href = "index.html";
+      }
+    }
+
+    function register() {
+      const u = document.getElementById("username").value.trim();
+      const p = document.getElementById("password").value;
+      if (!u || !p) return alert("Enter username and password.");
+
+      let users = getUsers();
+      if (users.find(user => user.username === u)) return alert("Username already taken.");
+
+      const isAdmin = (u === "anmay9661");
+      users.push({ username: u, password: p, approved: isAdmin });
+
+      saveUsers(users);
+      alert("Registered! Waiting for admin approval (unless you're admin).");
+    }
+
+    function resetAdminPass() {
+      const code = document.getElementById("resetCode").value.trim();
+      const newPass = document.getElementById("newPass").value.trim();
+
+      if (code !== "7903312393") return alert("Invalid code.");
+      if (!newPass) return alert("Enter new password.");
+
+      let users = getUsers();
+      let admin = users.find(u => u.username === "anmay9661");
+
+      if (!admin) {
+        users.push({ username: "anmay9661", password: newPass, approved: true });
+      } else {
+        admin.password = newPass;
+      }
+
+      saveUsers(users);
+      alert("Admin password reset.");
+    }
+  </script>
+</body>
+</html>

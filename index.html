@@ -1,0 +1,233 @@
+<!-- ✅ Updated index.html with toggle API/localStorage, download support, mobile desktop mode -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1024" />
+  <title>God Anime Verse</title>
+  <style>
+    :root {
+      --bg: #111;
+      --text: #fff;
+      --accent: #f97316;
+    }
+
+    body.light {
+      --bg: #f9f9f9;
+      --text: #111;
+    }
+
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .anime-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      padding: 1rem;
+    }
+
+    .anime-card {
+      background: transparent;
+      backdrop-filter: blur(5px);
+      padding: 1rem;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .anime-card img {
+      max-width: 100%;
+      border-radius: 8px;
+    }
+
+    button,
+    input,
+    select {
+      padding: 0.5em;
+      margin: 0.25em;
+      border: none;
+      border-radius: 5px;
+    }
+
+    button {
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+    }
+
+    .player {
+      width: 100%;
+      max-width: 640px;
+      margin: auto;
+      margin-top: 2em;
+    }
+
+    #themeToggle,
+    #apiToggle,
+    #loginBtn {
+      position: absolute;
+      top: 1em;
+      padding: 0.5em 1em;
+      background: var(--accent);
+      color: white;
+      border-radius: 5px;
+      text-decoration: none;
+    }
+
+    #themeToggle {
+      right: 1em;
+    }
+
+    #apiToggle {
+      right: 8em;
+    }
+
+    #loginBtn {
+      left: 1em;
+    }
+  </style>
+</head>
+
+<body>
+  <a href="login.html" id="loginBtn">🔑 Login</a>
+  <button id="apiToggle" onclick="toggleAPI()">📡 Toggle API</button>
+  <button id="themeToggle" onclick="toggleTheme()">🌓 Theme</button>
+
+  <h2 style="text-align:center;">Welcome to God Anime Verse</h2>
+  <input type="text" id="search" placeholder="Search anime..." oninput="filterAnime()"
+    style="width:100%;max-width:400px;margin:auto;display:block;padding:0.5em;">
+  <div class="anime-grid" id="animeGrid"></div>
+  <div class="player" id="player"></div>
+
+  <script>
+    // Auto Desktop Mode on Mobile
+    if (screen.width < 1024) {
+      document.querySelector('meta[name=viewport]').setAttribute('content', 'width=1024');
+    }
+
+    // User Check
+    const user = localStorage.getItem("animeUser") || "";
+    const pass = localStorage.getItem("animePass") || "";
+    if (user === "admin" || user === "anmay9661") {
+      location.href = "admin.html";
+    }
+
+    // Dark Mode
+    const currentTheme = localStorage.getItem("theme") || "dark";
+    document.body.classList.toggle("light", currentTheme === "light");
+
+    function toggleTheme() {
+      const newTheme = document.body.classList.contains("light") ? "dark" : "light";
+      document.body.classList.toggle("light");
+      localStorage.setItem("theme", newTheme);
+    }
+
+    // Anime Data
+    const animeKey = "animeList";
+    let animeList = [];
+    let useAPI = true;
+
+    async function fetchFromJikan() {
+      try {
+        const res = await fetch("https://api.jikan.moe/v4/top/anime");
+        const data = await res.json();
+        return data.data.map(a => ({
+          title: a.title,
+          img: a.images.jpg.image_url,
+          video: a.trailer?.embed_url || "",
+          genre: a.genres?.map(g => g.name).join(", "),
+          tags: []
+        }));
+      } catch (err) {
+        console.error("Jikan error:", err);
+        return [];
+      }
+    }
+
+    async function fetchFromLocal() {
+      return JSON.parse(localStorage.getItem(animeKey) || "[]");
+    }
+
+    async function loadAnime() {
+      animeList = useAPI ? await fetchFromJikan() : await fetchFromLocal();
+      renderAnime();
+    }
+
+    function renderAnime() {
+      const grid = document.getElementById("animeGrid");
+      grid.innerHTML = animeList.map((a, i) => `
+        <div class="anime-card">
+          <img src="${a.img}" alt="${a.title}" />
+          <h3>${a.title}</h3>
+          <p>${a.genre}</p>
+          <button onclick="watch(${i})">▶️ Watch</button>
+          ${a.video ? `<a href="${a.video}" target="_blank"><button>⬇️ Download</button></a>` : ''}
+        </div>
+      `).join("");
+    }
+
+    function watch(index) {
+      const a = animeList[index];
+      const p = document.getElementById("player");
+      p.innerHTML = `<iframe src="${a.video}" width="100%" height="360" allowfullscreen></iframe>`;
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    function filterAnime() {
+      const term = document.getElementById("search").value.toLowerCase();
+      const filtered = animeList.filter(a =>
+        a.title.toLowerCase().includes(term) ||
+        a.genre?.toLowerCase().includes(term)
+      );
+      const grid = document.getElementById("animeGrid");
+      grid.innerHTML = filtered.map((a, i) => `
+        <div class="anime-card">
+          <img src="${a.img}" alt="${a.title}" />
+          <h3>${a.title}</h3>
+          <p>${a.genre}</p>
+          <button onclick="watch(${i})">▶️ Watch</button>
+          ${a.video ? `<a href="${a.video}" target="_blank"><button>⬇️ Download</button></a>` : ''}
+        </div>
+      `).join("");
+    }
+
+    function toggleAPI() {
+      useAPI = !useAPI;
+      loadAnime();
+      alert("Now using " + (useAPI ? "Jikan API" : "LocalStorage"));
+    }
+
+    // Placeholder backend functions
+    async function fetchAnimeFromBackend() {
+      return await fetch("/api/anime").then(res => res.json());
+    }
+
+    async function postAnimeToBackend(anime) {
+      return await fetch("/api/anime", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(anime)
+      });
+    }
+
+    // Load anime on page load
+    loadAnime();
+
+    // Optional ad cleaner
+    function autoAdBlocker() {
+      const adSelectors = ["iframe", ".ad", ".ads", "[id*='ad']", "[class*='ad']"];
+      setInterval(() => {
+        adSelectors.forEach(sel => {
+          document.querySelectorAll(sel).forEach(el => el.remove());
+        });
+      }, 1000);
+    }
+  </script>
+</body>
+
+</html>
